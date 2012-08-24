@@ -27,7 +27,6 @@ public class process_pems_clearinghouse {
 	private Vector<Integer> vds = new Vector<Integer>();
 	private URL url;
 	protected HashMap <Integer,FiveMinuteData> data = new HashMap <Integer,FiveMinuteData> ();
-	private FileFormat myformat;
 	public boolean aggregatelanes;
 
 	/** Input: 1) name of file with list of VDS stations
@@ -102,19 +101,21 @@ public class process_pems_clearinghouse {
 				X.data.put(thisvds, new FiveMinuteData(thisvds,X.aggregatelanes));
 			}
 			
-			if(informat.equalsIgnoreCase("caltransdbx"))
-				X.myformat = X.new FileFormat("Caltrans DBX","dbx","\t",6,20,22,23,8,true);
-			else if(informat.equalsIgnoreCase("pems5min"))
-				X.myformat = X.new FileFormat("PeMS 5 min","pems5min",",",5,8,9,10,8,false);
-			else if(informat.equalsIgnoreCase("pemshourly"))
-				X.myformat = X.new FileFormat("PeMS Hourly","pemshour",",",3,15,16,17,8,false);
-			else
-				System.out.println("ERROR");
+//			if(informat.equalsIgnoreCase("caltransdbx"))
+//				X.myformat = X.new FileFormat("Caltrans DBX","dbx","\t",6,20,22,23,8,true);
+//			else if(informat.equalsIgnoreCase("pems5min"))
+//				X.myformat = X.new FileFormat("PeMS 5 min","pems5min",",",5,8,9,10,8,false);
+//			else if(informat.equalsIgnoreCase("pemshourly"))
+//				X.myformat = X.new FileFormat("PeMS Hourly","pemshour",",",3,15,16,17,8,false);
+//			else
+//				System.out.println("ERROR");
 			
-			X.ReadDataSource();
+			AbstractDataIO dataIO = new DataIO_5min();
+			
+			dataIO.read(url,vds,data,aggregatelanes);
 
 			// Write to text file
-			X.WriteDataToFile();
+			dataIO.write(data,aggregatelanes,outfolder,daystring);
 			
 			System.out.println("Wrote to " + X.outfolder);
 			
@@ -130,174 +131,5 @@ public class process_pems_clearinghouse {
 		while( (strLine = ba.readLine())!=null)
 			vds.add( Integer.parseInt(strLine));
 	}
-    
-	public void ReadDataSource() throws NumberFormatException, IOException{
-		int lane;
-    	String line,str;
-    	int indexof;
-        Calendar calendar = Calendar.getInstance();
-    	float totalflw,totalspd;
-    	float val;
-    	long time;
-    	int actuallanes;
-    	boolean hasflw,hasspd,hasocc;
-    	    	
-    	System.out.println("Reading data,");
-    	System.out.println("\t+ url: " + url.getFile());
-    	System.out.println("\t+ stations: " + vds.toString());
-    	System.out.println("\t+ format: " + myformat.name);
-    	
-    	int largestoffset = Math.max(Math.max(myformat.flwoffset,myformat.occoffset),myformat.spdoffset);
-    		
-		URLConnection uc = url.openConnection();
-		BufferedReader fin = new BufferedReader(new InputStreamReader(uc.getInputStream()));
-		if(myformat.hasheader)
-			line=fin.readLine(); 	// discard the header
-    	while ((line=fin.readLine()) != null) {
-            String f[] = line.split(myformat.delimiter,-1);
-            int thisvds = Integer.parseInt(f[1]);
-
-            indexof = vds.indexOf(thisvds);
-            if(indexof<0)
-            	continue;
-            
-    		calendar.setTime(ConvertTime(f[0]));
-    		time = calendar.getTime().getTime()/1000;
-    
-        	ArrayList<Float> laneflw = new ArrayList<Float>();
-        	ArrayList<Float> laneocc = new ArrayList<Float>();
-        	ArrayList<Float> lanespd = new ArrayList<Float>();
-        
-        	// store in lane-wise ArrayList
-        	actuallanes = 0;
-            totalflw = 0;
-            totalspd = 0;
-            int index;
-            
-            int maxlanes = (int)((f.length-largestoffset)/myformat.laneblocksize);
-            maxlanes = Math.min(maxlanes,myformat.maxlanes);
-            
-            for (lane=0;lane<maxlanes;lane++) {
-            	
-            	index = myformat.laneblocksize*(lane+1)+myformat.flwoffset;
-            	str = f[index];
-            	hasflw = !str.isEmpty();
-            	if(hasflw){
-            		val = Float.parseFloat(str)*12f;
-            		laneflw.add(val);
-            		totalflw += val;
-            	}
-            	else
-                	laneflw.add(Float.NaN); 
-            	
-            	index = myformat.laneblocksize*(lane+1)+myformat.occoffset;
-            	str = f[index];
-            	hasocc = !str.isEmpty();
-            	if(hasocc)
-            		laneocc.add(Float.parseFloat(str));
-            	else
-            		laneocc.add(Float.NaN); 
-            	
-            	index = myformat.laneblocksize*(lane+1)+myformat.spdoffset;
-            	str = f[index];
-            	hasspd = !str.isEmpty();
-            	if(hasspd){
-            		val = Float.parseFloat(str);
-            		lanespd.add(val);
-            		totalspd += val;
-            	}
-            	else
-            		lanespd.add(Float.NaN); 
-            	if(hasflw || hasocc || hasspd)
-            		actuallanes++;
-            }
-
-            // find the data structure and store. 
-            FiveMinuteData D = data.get(thisvds);
-            if(aggregatelanes && actuallanes>0){
-                totalspd /= actuallanes;
-                D.addAggFlw(totalflw);
-                D.addAggOcc(totalflw/totalspd);		// actually density
-                D.addAggSpd(totalspd);
-                D.time.add(time);	
-            }
-            else{
-            
-	            D.flwadd(laneflw,0,actuallanes);
-	            D.occadd(laneocc,0,actuallanes);
-	            D.spdadd(lanespd,0,actuallanes);
-	            D.time.add(time);
-            }
-        }    	
-        fin.close();
-    }
-    
-	private void WriteDataToFile() throws Exception{
-		
-		int i;
-		
-		String aggstring;
-        if(aggregatelanes)
-        	aggstring = "agg";
-        else
-        	aggstring = "lanes";
-        	
-		for(Integer thisvds : data.keySet()) {
-			FiveMinuteData D = data.get(thisvds);
-
-			PrintStream flw_out = new PrintStream(new FileOutputStream(outfolder + File.separator + myformat.outputprefix + "_" + daystring + "_" + thisvds + "_flw_" + aggstring + ".txt"));
-    		for(i=0;i<D.numflw();i++)
-    			flw_out.println(D.getTimeString(i)+"\t"+D.getFlwString(i));
-            flw_out.close();
-
-            PrintStream occ_out;
-            if(aggregatelanes)
-            	occ_out = new PrintStream(new FileOutputStream(outfolder + File.separator + myformat.outputprefix + "_" + daystring+ "_" + thisvds + "_dty_" + aggstring + ".txt"));
-            else
-            	occ_out = new PrintStream(new FileOutputStream(outfolder + File.separator + myformat.outputprefix + "_" + daystring+ "_" + thisvds + "_occ_" + aggstring + ".txt"));
-			for(i=0;i<D.numocc();i++)
-				occ_out.println(D.getTimeString(i)+"\t"+D.getOccString(i));
-            occ_out.close();
-            
-			PrintStream spd_out = new PrintStream(new FileOutputStream(outfolder + File.separator + myformat.outputprefix + "_" + daystring+ "_" + thisvds + "_spd_" + aggstring + ".txt"));
-			for(i=0;i<D.numspd();i++)
-				spd_out.println(D.getTimeString(i)+"\t"+D.getSpdString(i));
-            spd_out.close();
-			
-		}		
-	}
-
-    private static Date ConvertTime(final String timestr) {
-        SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-        ParsePosition pp = new ParsePosition(0);
-        return formatter.parse(timestr,pp);
-    }
-
-    private class FileFormat {
-    	public String outputprefix;
-    	public String name;
-    	public int laneblocksize;
-    	public int flwoffset;
-    	public int occoffset;
-    	public int spdoffset;
-    	public int maxlanes;
-    	public boolean hasheader;
-    	public String delimiter;
-
-    	public FileFormat(String name,String outprefix,String delimiter,int laneblocksize, int flwoffset,int occoffset,int spdoffset, int maxlanes,boolean hasheader) {
-    		super();
-    		this.name = name;
-    		this.outputprefix = outprefix;
-    		this.delimiter = delimiter;	
-    		this.laneblocksize = laneblocksize;
-    		this.flwoffset = flwoffset;
-    		this.occoffset = occoffset;
-    		this.spdoffset = spdoffset;
-    		this.maxlanes = maxlanes;
-    		this.hasheader = hasheader;
-    	}
-    
-    
-    }
 
 }
