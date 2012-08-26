@@ -1,33 +1,10 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Vector;
 
 public class process_pems_clearinghouse {
-
-	private String datafolder;
-	private int district;
-	private int year;
-	private int month;
-	private int day;
-	private String daystring;
-	private String outfolder = "pemsdataclean";
-	private Vector<Integer> vds = new Vector<Integer>();
-	private URL url;
-	protected HashMap <Integer,FiveMinuteData> data = new HashMap <Integer,FiveMinuteData> ();
-	public boolean aggregatelanes;
 
 	/** Input: 1) name of file with list of VDS stations
 	 * 2) input file url
@@ -39,9 +16,21 @@ public class process_pems_clearinghouse {
 
 		int i;
 		String informat = "";
-		//String inURL = "";
 		String vdsfile = "";
 
+		String datafolder;
+		int district;
+		int year;
+		int month;
+		int day;
+		String daystring = "";
+		String outfolder = "pemsdataclean";
+		Vector<Integer> vds = new Vector<Integer>();
+		String data_file_name = "";
+		HashMap <Integer,FiveMinuteData> data = new HashMap <Integer,FiveMinuteData> ();
+		boolean aggregatelanes;
+
+		
 		if(args.length!=9){
 			System.out.println("Usage:");
 			System.out.println("	args[0]: File with list of vds.");
@@ -55,69 +44,67 @@ public class process_pems_clearinghouse {
 			System.out.println("	args[8]: Aggregate lanes (true,false)");
 			return;
 		}
-			
-		process_pems_clearinghouse X = new process_pems_clearinghouse();
-		
+					
 		// read input parameters
 		vdsfile = args[0];
 		
-		X.datafolder = args[1];
-		X.district = Integer.parseInt(args[2]);
-		X.year = Integer.parseInt(args[3]);
-		X.month = Integer.parseInt(args[4]);
-		X.day = Integer.parseInt(args[5]);
+		datafolder = args[1];
+		district = Integer.parseInt(args[2]);
+		year = Integer.parseInt(args[3]);
+		month = Integer.parseInt(args[4]);
+		day = Integer.parseInt(args[5]);
 
 		//inURL = args[1];
 		informat = args[6];
-		X.outfolder = args[7];
-		X.aggregatelanes = Boolean.parseBoolean(args[8]);
+		outfolder = args[7];
+		aggregatelanes = Boolean.parseBoolean(args[8]);
 		
 		try {
 			
-			String inURL = "";
 			if(informat.equalsIgnoreCase("caltransdbx")){
-				X.daystring = String.format("%d",X.year) + "_" + String.format("%02d",X.month) + "_" + String.format("%02d",X.day);
-				inURL = X.datafolder + File.separator + X.daystring + ".txt";
+				daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);
+				data_file_name = datafolder + File.separator + daystring + ".txt";
 			}
 			else if(informat.equalsIgnoreCase("pems5min")){
-				X.daystring = String.format("%d",X.year) + "_" + String.format("%02d",X.month) + "_" + String.format("%02d",X.day);
-				inURL = X.datafolder + File.separator + "d" + String.format("%02d",X.district) +"_text_station_5min_" + X.daystring + ".txt";
+				daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);
+				data_file_name = datafolder + File.separator + "d" + String.format("%02d",district) +"_text_station_5min_" + daystring + ".txt";
 			}
 			else if(informat.equalsIgnoreCase("pemshourly")){
-				X.daystring = String.format("%d",X.year) + "_" + String.format("%02d",X.month);
-				inURL = X.datafolder + File.separator + "d" + String.format("%02d",X.district) +"_text_station_hour_" + X.daystring + ".txt";
+				daystring = String.format("%d",year) + "_" + String.format("%02d",month);
+				data_file_name = datafolder + File.separator + "d" + String.format("%02d",district) +"_text_station_hour_" + daystring + ".txt";
 			}
-			else
+			else{
 				System.out.println("ERROR");
-			
-			X.url = new URL(inURL);
+				return;
+			}
 			
 			// read detector stations from file
-			ReadVDSFile(vdsfile,X.vds);
+			ReadVDSFile(vdsfile,vds);
 
 			// initialize data map
-			for(i=0;i<X.vds.size();i++){
-				int thisvds = X.vds.get(i);
-				X.data.put(thisvds, new FiveMinuteData(thisvds,X.aggregatelanes));
+			for(i=0;i<vds.size();i++)
+				data.put(vds.get(i), new FiveMinuteData(vds.get(i),aggregatelanes));
+			
+			AbstractDataIO dataIO;
+			if(informat.equalsIgnoreCase("caltransdbx"))
+				dataIO = new DataIO_CaltransDBX();
+			else if(informat.equalsIgnoreCase("pemsraw"))
+				dataIO = new DataIO_30sec();
+			else if(informat.equalsIgnoreCase("pems5min"))
+				dataIO = new DataIO_5min();
+			else if(informat.equalsIgnoreCase("pemshourly"))
+				dataIO = new DataIO_1hour();
+			else{
+				System.out.println("ERROR");
+				return;
 			}
-			
-//			if(informat.equalsIgnoreCase("caltransdbx"))
-//				X.myformat = X.new FileFormat("Caltrans DBX","dbx","\t",6,20,22,23,8,true);
-//			else if(informat.equalsIgnoreCase("pems5min"))
-//				X.myformat = X.new FileFormat("PeMS 5 min","pems5min",",",5,8,9,10,8,false);
-//			else if(informat.equalsIgnoreCase("pemshourly"))
-//				X.myformat = X.new FileFormat("PeMS Hourly","pemshour",",",3,15,16,17,8,false);
-//			else
-//				System.out.println("ERROR");
-			
-			AbstractDataIO dataIO = new DataIO_5min();
-			
-			dataIO.read(url,vds,data,aggregatelanes);
+
+			dataIO.read(data_file_name,vds,data,aggregatelanes);
 
 			// Write to text file
 			dataIO.write(data,aggregatelanes,outfolder,daystring);
 			
-			System.out.println("Wrote to " + X.outfolder);
+			System.out.println("Wrote to " + outfolder);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
