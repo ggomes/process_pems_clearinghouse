@@ -34,7 +34,7 @@ import java.io.File;
  * Lane N Avg Speed		[Mph] Flow-weighted average of 5-minute lane N speeds. If flow is 0, mathematical average of 5-minute 
  * 						lane speeds. N ranges from 1 to the number of lanes at the location.
  */
-public class DataIO_1hour extends AbstractDataIO {
+public class DataIO_1hour extends BaseDataIO {
 	
 	public DataIO_1hour(String datafolder,String outfolder,int district,int day,int month,int year) {
 		String daystring = String.format("%d",year) + "_" + String.format("%02d",month);

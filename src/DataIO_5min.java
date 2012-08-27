@@ -31,7 +31,7 @@ import java.io.File;
  * Lane N Observed		1 indicates observed data, 0 indicates imputed.
  *
  */
-public class DataIO_5min extends AbstractDataIO {
+public class DataIO_5min extends BaseDataIO {
 
 	public DataIO_5min(String datafolder,String outfolder,int district,int day,int month,int year) {
 		String daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);

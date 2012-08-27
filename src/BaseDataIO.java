@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Vector;
 
-public abstract class AbstractDataIO {
+public class BaseDataIO {
 
 	public String data_file_name;
 	public String outprefix;	// prefix added to all output files

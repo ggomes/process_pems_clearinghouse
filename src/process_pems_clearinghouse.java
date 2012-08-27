@@ -44,7 +44,7 @@ public class process_pems_clearinghouse {
 				data.put(vds.get(i), new TrafficData(vds.get(i),aggregatelanes));
 			
 			// Construct read/writer
-			AbstractDataIO dataIO;
+			BaseDataIO dataIO;
 			if(informat.equalsIgnoreCase("caltransdbx"))
 				dataIO = new DataIO_CaltransDBX(datafolder,outfolder,district,day,month,year);
 			else if(informat.equalsIgnoreCase("pems30sec"))

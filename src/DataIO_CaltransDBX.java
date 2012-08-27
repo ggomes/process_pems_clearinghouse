@@ -1,7 +1,7 @@
 import java.io.File;
 
 
-public class DataIO_CaltransDBX extends AbstractDataIO {
+public class DataIO_CaltransDBX extends BaseDataIO {
 	
 	public DataIO_CaltransDBX(String datafolder,String outfolder,int district,int day,int month,int year) {
 		String daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);

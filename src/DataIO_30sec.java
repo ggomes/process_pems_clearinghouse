@@ -11,7 +11,7 @@ import java.io.File;
  * Lane N Speed			Speed as measured by the detector. Empty if the detector does not report speed. 
  * 						N ranges from 1 to the number of lanes at the location.
  */
-public class DataIO_30sec extends AbstractDataIO {
+public class DataIO_30sec extends BaseDataIO {
 
 	public DataIO_30sec(String datafolder,String outfolder,int district,int day,int month,int year) {
 		String daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);
