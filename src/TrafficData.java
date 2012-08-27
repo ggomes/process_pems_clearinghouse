@@ -1,7 +1,7 @@
 
 import java.util.ArrayList;
 
-public class FiveMinuteData {
+public class TrafficData {
 
 	public boolean isaggregate;	// true if object holds only averages over all lanes
 	public int vds;
@@ -10,7 +10,7 @@ public class FiveMinuteData {
 	private ArrayList<ArrayList<Float>> occ = new ArrayList<ArrayList<Float>>();
 	private ArrayList<ArrayList<Float>> spd = new ArrayList<ArrayList<Float>>();
 	
-	public FiveMinuteData(int vds,boolean isaggregate) {
+	public TrafficData(int vds,boolean isaggregate) {
 		this.vds=vds;
 		this.isaggregate = isaggregate;
 	}

@@ -1,3 +1,5 @@
+import java.io.File;
+
 
 /**
  * Timestamp			Date of data as MM/DD/YYYY HH24:MI:SS. Note that minute and second 
@@ -34,8 +36,10 @@
  */
 public class DataIO_1hour extends AbstractDataIO {
 	
-	public DataIO_1hour() {
-		outprefix = "pemshour";
+	public DataIO_1hour(String datafolder,String outfolder,int district,int day,int month,int year) {
+		String daystring = String.format("%d",year) + "_" + String.format("%02d",month);
+		data_file_name = datafolder + File.separator + "d" + String.format("%02d",district) +"_text_station_hour_" + daystring + ".txt";
+		outprefix = outfolder + File.separator + "pemshour" + "_" + daystring + "_";;
 		delimiter = ",";
 		laneblocksize = 3;
 		flwoffset = 15;
@@ -43,6 +47,7 @@ public class DataIO_1hour extends AbstractDataIO {
 		spdoffset = 17;
 		maxlanes = 8;
 		hasheader = false;
+		flow_mult = 1f;
 	}
 	
 }

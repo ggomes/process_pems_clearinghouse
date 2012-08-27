@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.Vector;
 
 public abstract class AbstractDataIO {
 
+	public String data_file_name;
 	public String outprefix;	// prefix added to all output files
 	public String delimiter;	// column separator in the data file
 	public int laneblocksize;	// number of data columns per lane
@@ -22,8 +22,9 @@ public abstract class AbstractDataIO {
 	public int spdoffset;		// offset of the speed value within the block
 	public int maxlanes;		// maximum number of lane blocks
 	public boolean hasheader;	// true => ignore first line
+	public float flow_mult;		// conversion factor to veh/hr
 		
-	public void read(String data_file_name,Vector<Integer> vds,HashMap <Integer,FiveMinuteData> data,boolean aggregatelanes) throws NumberFormatException, IOException{
+	public void read(Vector<Integer> vds,HashMap <Integer,TrafficData> data,boolean aggregatelanes) throws NumberFormatException, IOException{
 		
 		int lane;
     	String line,str;
@@ -36,7 +37,7 @@ public abstract class AbstractDataIO {
     	boolean hasflw,hasspd,hasocc;
     	 
     	System.out.println("Reading data,");
-    	System.out.println("\t+ url: " + data_file_name);
+    	System.out.println("\t+ file aname: " + data_file_name);
     	System.out.println("\t+ stations: " + vds.toString());
     	
     	int largestoffset = Math.max(Math.max(flwoffset,occoffset),spdoffset);
@@ -74,7 +75,7 @@ public abstract class AbstractDataIO {
             	str = f[index];
             	hasflw = !str.isEmpty();
             	if(hasflw){
-            		val = Float.parseFloat(str)*12f;
+            		val = Float.parseFloat(str)*flow_mult;
             		laneflw.add(val);
             		totalflw += val;
             	}
@@ -104,7 +105,7 @@ public abstract class AbstractDataIO {
             }
 
             // find the data structure and store. 
-            FiveMinuteData D = data.get(thisvds);
+            TrafficData D = data.get(thisvds);
             if(aggregatelanes && actuallanes>0){
                 totalspd /= actuallanes;
                 D.addAggFlw(totalflw);
@@ -123,7 +124,7 @@ public abstract class AbstractDataIO {
         fin.close();	
 	}
 	
-	public void write(HashMap <Integer,FiveMinuteData> data,boolean aggregatelanes,String outfolder,String daystring) throws Exception{
+	public void write(HashMap <Integer,TrafficData> data,boolean aggregatelanes) throws Exception{
 
 		int i;
 		
@@ -134,23 +135,23 @@ public abstract class AbstractDataIO {
         	aggstring = "lanes";
         	
 		for(Integer thisvds : data.keySet()) {
-			FiveMinuteData D = data.get(thisvds);
+			TrafficData D = data.get(thisvds);
 
-			PrintStream flw_out = new PrintStream(new FileOutputStream(outfolder + File.separator + outprefix + "_" + daystring + "_" + thisvds + "_flw_" + aggstring + ".txt"));
+			PrintStream flw_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_flw_" + aggstring + ".txt"));
     		for(i=0;i<D.numflw();i++)
     			flw_out.println(D.getTimeString(i)+"\t"+D.getFlwString(i));
             flw_out.close();
 
             PrintStream occ_out;
             if(aggregatelanes)
-            	occ_out = new PrintStream(new FileOutputStream(outfolder + File.separator + outprefix + "_" + daystring+ "_" + thisvds + "_dty_" + aggstring + ".txt"));
+            	occ_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_dty_" + aggstring + ".txt"));
             else
-            	occ_out = new PrintStream(new FileOutputStream(outfolder + File.separator + outprefix + "_" + daystring+ "_" + thisvds + "_occ_" + aggstring + ".txt"));
+            	occ_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_occ_" + aggstring + ".txt"));
 			for(i=0;i<D.numocc();i++)
 				occ_out.println(D.getTimeString(i)+"\t"+D.getOccString(i));
             occ_out.close();
             
-			PrintStream spd_out = new PrintStream(new FileOutputStream(outfolder + File.separator + outprefix + "_" + daystring+ "_" + thisvds + "_spd_" + aggstring + ".txt"));
+			PrintStream spd_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_spd_" + aggstring + ".txt"));
 			for(i=0;i<D.numspd();i++)
 				spd_out.println(D.getTimeString(i)+"\t"+D.getSpdString(i));
             spd_out.close();

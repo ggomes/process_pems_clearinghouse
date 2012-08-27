@@ -1,3 +1,5 @@
+import java.io.File;
+
 
 /**
  * Timestamp			Date of data as MM/DD/YYYY HH24:MI:SS. Note that the indicates the 
@@ -31,8 +33,10 @@
  */
 public class DataIO_5min extends AbstractDataIO {
 
-	public DataIO_5min() {
-		outprefix = "pems5min";
+	public DataIO_5min(String datafolder,String outfolder,int district,int day,int month,int year) {
+		String daystring = String.format("%d",year) + "_" + String.format("%02d",month) + "_" + String.format("%02d",day);
+		data_file_name = datafolder + File.separator + "d" + String.format("%02d",district) +"_text_station_5min_" + daystring + ".txt";
+		outprefix = outfolder + File.separator + "pems5min" + "_" + daystring + "_";
 		delimiter = ",";
 		laneblocksize = 5;
 		flwoffset = 8;
@@ -40,6 +44,7 @@ public class DataIO_5min extends AbstractDataIO {
 		spdoffset = 10;
 		maxlanes = 8;
 		hasheader = false;
+		flow_mult = 12f;
 	}
 
 }
