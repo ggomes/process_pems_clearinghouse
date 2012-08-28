@@ -6,15 +6,16 @@ public class TrafficData {
 	public boolean isaggregate;	// true if object holds only averages over all lanes
 	public int vds;
 	public ArrayList<Long> time = new ArrayList<Long>();
-	private ArrayList<ArrayList<Float>> flw = new ArrayList<ArrayList<Float>>();
-	private ArrayList<ArrayList<Float>> occ = new ArrayList<ArrayList<Float>>();
-	private ArrayList<ArrayList<Float>> spd = new ArrayList<ArrayList<Float>>();
+	public ArrayList<ArrayList<Float>> flw = new ArrayList<ArrayList<Float>>();
+	public ArrayList<ArrayList<Float>> occ = new ArrayList<ArrayList<Float>>();
+	public ArrayList<ArrayList<Float>> spd = new ArrayList<ArrayList<Float>>();
 	
 	public TrafficData(int vds,boolean isaggregate) {
 		this.vds=vds;
 		this.isaggregate = isaggregate;
 	}
 	
+	// number of time steps ....................................
 	public int numflw(){
 		if(flw.isEmpty())
 			return 0;
@@ -42,38 +43,91 @@ public class TrafficData {
 			return spd.size();
 	}
 	
+	// number of lanes for time index ..........................
+	public int num_flw_lanes(int i){
+		try {
+			if(flw.isEmpty())
+				return 0;
+			if(isaggregate)	
+				return 1;
+			else
+				return flw.get(i).size();
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+	
+	public int num_occ_lanes(int i){
+		try {
+			if(occ.isEmpty())
+				return 0;
+			if(isaggregate)	
+				return 1;
+			else
+				return occ.get(i).size();
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+	
+	public int num_spd_lanes(int i){
+		try {
+			if(spd.isEmpty())
+				return 0;
+			if(isaggregate)	
+				return 1;
+			else
+				return spd.get(i).size();
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+
+	// convert to string .......................................
 	public String getTimeString(int i){
 		return String.format("%d",time.get(i));
 	}
 	
-	public String getFlwString(int i){
+	public String getFlwString(int i,int maxlanes){
 		if(isaggregate){
 			return String.format("%f", flw.get(0).get(i));
 		}
 		else{
-			return tabformat(flw.get(i));
+			return tabformat(flw.get(i),maxlanes);
 		}
 	}
 
-	public String getOccString(int i){
+	public String getOccString(int i,int maxlanes){
 		if(isaggregate){
 			return String.format("%f", occ.get(0).get(i));
 		}
 		else{
-			return tabformat(occ.get(i));
+			return tabformat(occ.get(i),maxlanes);
 		}
 	}
 
-	public String getSpdString(int i){
+	public String getSpdString(int i,int maxlanes){
 		if(isaggregate){
 			return String.format("%f", spd.get(0).get(i));
 		}
 		else{
-			return tabformat(spd.get(i));
+			return tabformat(spd.get(i),maxlanes);
 		}
 	}
 	
-	// methods for aggregated data ............................
+	private static String tabformat(ArrayList<Float> V,int strlength){
+		String out = "";
+		int i;
+		for(i=0;i<strlength;i++){
+			if(i>V.size()-1)
+				out = out + "NaN\t";
+			else
+				out = out + String.format("%f", V.get(i))+ "\t";
+		}
+		return out;
+	}
+	
+	// append aggregated data ......................................
 	public void addAggFlw(float val){
 		if(flw.isEmpty())
 			flw.add(new ArrayList<Float>());
@@ -95,7 +149,7 @@ public class TrafficData {
 			spd.get(0).add(val);
 	}
 
-	// methods for per lane data .......................................
+	// append per lane data .......................................
 	public void flwadd(ArrayList<Float> row,int start,int end){
 		ArrayList<Float> x = new ArrayList<Float>();
 		for(int i=start;i<end;i++)
@@ -116,12 +170,5 @@ public class TrafficData {
 			x.add(row.get(i));
 		spd.add(x);
 	}
-	
-	private static String tabformat(ArrayList<Float> V){
-		String out = "";
-		for(int i=0;i<V.size();i++)
-			out = out + String.format("%f", V.get(i))+ "\t";
-		return out;
-	}
-	
+
 }

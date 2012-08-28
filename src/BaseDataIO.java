@@ -114,7 +114,6 @@ public class BaseDataIO {
                 D.time.add(time);	
             }
             else{
-            
 	            D.flwadd(laneflw,0,actuallanes);
 	            D.occadd(laneocc,0,actuallanes);
 	            D.spdadd(lanespd,0,actuallanes);
@@ -126,7 +125,7 @@ public class BaseDataIO {
 	
 	public void write(HashMap <Integer,TrafficData> data,boolean aggregatelanes) throws Exception{
 
-		int i;
+		int i,maxlanes,lanes;
 		
 		String aggstring;
         if(aggregatelanes)
@@ -136,24 +135,55 @@ public class BaseDataIO {
         	
 		for(Integer thisvds : data.keySet()) {
 			TrafficData D = data.get(thisvds);
-
+				
+			// find maximum number of flw lanes
+			maxlanes = 1;
+			if(!aggregatelanes){
+				for(i=0;i<D.numflw();i++){
+					lanes = D.num_flw_lanes(i);
+					maxlanes = lanes>maxlanes ? lanes : maxlanes;
+				}
+			}
+			
+			// print flw to file
 			PrintStream flw_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_flw_" + aggstring + ".txt"));
     		for(i=0;i<D.numflw();i++)
-    			flw_out.println(D.getTimeString(i)+"\t"+D.getFlwString(i));
+    			flw_out.println(D.getTimeString(i)+"\t"+D.getFlwString(i,maxlanes));
             flw_out.close();
 
+			// find maximum number of occ lanes
+			maxlanes = 1;
+			if(!aggregatelanes){
+				for(i=0;i<D.numocc();i++){
+					lanes = D.num_occ_lanes(i);
+					maxlanes = lanes>maxlanes ? lanes : maxlanes;
+				}
+			}
+
+			// print occ to file
             PrintStream occ_out;
             if(aggregatelanes)
             	occ_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_dty_" + aggstring + ".txt"));
             else
             	occ_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_occ_" + aggstring + ".txt"));
 			for(i=0;i<D.numocc();i++)
-				occ_out.println(D.getTimeString(i)+"\t"+D.getOccString(i));
+				occ_out.println(D.getTimeString(i)+"\t"+D.getOccString(i,maxlanes));
             occ_out.close();
             
+
+			// find maximum number of spd lanes
+			maxlanes = 1;
+			if(!aggregatelanes){
+				for(i=0;i<D.numspd();i++){
+					lanes = D.num_spd_lanes(i);
+					maxlanes = lanes>maxlanes ? lanes : maxlanes;
+				}
+			}
+
+			// print spd to file
 			PrintStream spd_out = new PrintStream(new FileOutputStream(outprefix + thisvds + "_spd_" + aggstring + ".txt"));
 			for(i=0;i<D.numspd();i++)
-				spd_out.println(D.getTimeString(i)+"\t"+D.getSpdString(i));
+				spd_out.println(D.getTimeString(i)+"\t"+D.getSpdString(i,maxlanes));
             spd_out.close();
 		}		
 	}
