@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class TrafficData {
 
@@ -85,12 +86,12 @@ public class TrafficData {
 
 	// convert to string .......................................
 	public String getTimeString(int i){
-		return String.format("%d",time.get(i));
+		return String.format(Locale.US, "%d",time.get(i));
 	}
 	
 	public String getFlwString(int i,int maxlanes){
 		if(isaggregate){
-			return String.format("%f", flw.get(0).get(i));
+			return String.format(Locale.US, "%f", flw.get(0).get(i));
 		}
 		else{
 			return tabformat(flw.get(i),maxlanes);
@@ -99,7 +100,7 @@ public class TrafficData {
 
 	public String getOccString(int i,int maxlanes){
 		if(isaggregate){
-			return String.format("%f", occ.get(0).get(i));
+			return String.format(Locale.US, "%f", occ.get(0).get(i));
 		}
 		else{
 			return tabformat(occ.get(i),maxlanes);
@@ -108,7 +109,7 @@ public class TrafficData {
 
 	public String getSpdString(int i,int maxlanes){
 		if(isaggregate){
-			return String.format("%f", spd.get(0).get(i));
+			return String.format(Locale.US, "%f", spd.get(0).get(i));
 		}
 		else{
 			return tabformat(spd.get(i),maxlanes);
@@ -122,7 +123,7 @@ public class TrafficData {
 			if(i>V.size()-1)
 				out = out + "NaN\t";
 			else
-				out = out + String.format("%f", V.get(i))+ "\t";
+				out = out + String.format(Locale.US, "%f", V.get(i))+ "\t";
 		}
 		return out;
 	}
